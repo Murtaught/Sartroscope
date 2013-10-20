@@ -13,8 +13,10 @@ char window_title[] = "Display Image";
 void detectAndDisplay( cv::Mat frame );
 
 /** Global variables */
+// From http://www-personal.umich.edu/~shameem/haarcascade_eye.html
+string eyes_cascade_name = "haarcascade_eye.xml";
 string face_cascade_name = "haarcascade_frontalface_alt.xml";
-string eyes_cascade_name = "haarcascade_eye_tree_eyeglasses.xml";
+
 cv::CascadeClassifier face_cascade;
 cv::CascadeClassifier eyes_cascade;
 string window_name = "Capture - Face detection";
