@@ -73,7 +73,7 @@ void detectAndDisplay(cv::Mat frame, cv::Mat background)
 
 int main(int argc, char** argv)
 {
-    if ( argc > 4 )
+    if ( argc > 4 || argc < 3 )
     {
         cout << "Usage: " << argv[0] << " IMAGE_FILE BACKGROUND_FILE [OUTPUT_FILE]" << endl;
         return -1;
