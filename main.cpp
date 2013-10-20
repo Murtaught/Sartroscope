@@ -7,86 +7,84 @@
 #include <opencv2/objdetect/objdetect.hpp>
 using namespace std;
 
-char window_title[] = "Display Image";
+string window_title = "Sartroscope show image";
 
-/** Function Headers */
-void detectAndDisplay( cv::Mat frame );
-
-/** Global variables */
 // From http://www-personal.umich.edu/~shameem/haarcascade_eye.html
 string eyes_cascade_name = "haarcascade_eye.xml";
 string face_cascade_name = "haarcascade_frontalface_alt.xml";
+string nose_cascade_name = "haarcascade_nose.xml";
 
 cv::CascadeClassifier face_cascade;
 cv::CascadeClassifier eyes_cascade;
-string window_name = "Capture - Face detection";
+cv::CascadeClassifier nose_cascade;
 cv::RNG rng(12345);
+
+void detectAndDisplay(cv::Mat frame, cv::Mat background)
+{
+    // prepare given image for eye detection
+    cv::Mat detection_frame;
+    cv::cvtColor(frame, detection_frame, CV_BGR2GRAY);
+    cv::equalizeHist(detection_frame, detection_frame);
+
+    // prepare result image
+    cv::Mat grayscale_frame;
+    cv::cvtColor(frame, grayscale_frame, CV_BGR2GRAY);
+
+    // blend with background
+    cv::cvtColor(background, background, CV_BGR2GRAY);
+    cv::Mat backgr_part = background(cv::Rect(0, 0, frame.cols, frame.rows));
+    cv::addWeighted(grayscale_frame, 0.8, backgr_part, 0.2, 0.0, grayscale_frame);
+
+    // detect eyes
+    std::vector<cv::Rect> eyes;
+    eyes_cascade.detectMultiScale(frame, eyes, 1.2, 2, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(30, 30) );
+
+    for(int i = 0; i < eyes.size(); i++)
+    {
+       cv::Point center(eyes[i].x + eyes[i].width*0.5, eyes[i].y + eyes[i].height*0.5);
+       int radius = cvRound( (eyes[i].width + eyes[i].height)*0.10 );
+       cv::circle(grayscale_frame, center, radius, cv::Scalar( 255, 255, 255 ), -1, 8, 0 );
+    }
+
+    cv::Mat gaussian_noise_frame = grayscale_frame.clone();
+    cv::randn(gaussian_noise_frame, 128, 30);
+
+    cv::Mat noised_grframe;
+    cv::addWeighted(grayscale_frame, 0.8, gaussian_noise_frame, 0.2, 0.0, noised_grframe);
+
+    cv::Mat smoothed_ngrframe;
+    cv::GaussianBlur(noised_grframe, smoothed_ngrframe, cv::Size(3, 3), 0, 0);
+
+    cv::imshow(window_title, smoothed_ngrframe);
+}
 
 int main(int argc, char** argv)
 {
-    if ( argc < 2 )
+    if ( argc < 3 )
     {
-        cout << "Usage: " << argv[0] << " IMAGE_FILE" << endl;
+        cout << "Usage: " << argv[0] << " IMAGE_FILE BACKGROUND_FILE" << endl;
         return -1;
     }
 
-    cv::Mat image = cv::imread(argv[1]);
+    cv::Mat image      = cv::imread(argv[1]);
+    cv::Mat background = cv::imread(argv[2]);
 
-    if( !image.data )
+    if( !image.data || !background.data )
     {
-        cout << "No image data" << endl;
+        cout << "No image or background data" << endl;
         return -2;
     }
 
-    // AAA
-    //-- 1. Load the cascades
-    if ( !face_cascade.load(face_cascade_name) || !eyes_cascade.load(eyes_cascade_name) )
+    // Load Haar cascades
+    if ( !eyes_cascade.load(eyes_cascade_name) )
     {
-        cout << "!! -- Error loading cascades!" << endl;
+        cout << "!! -- Error loading Haar cascades!" << endl;
         return -3;
     }
 
-    detectAndDisplay( image );
-    // AAA
-
-    //cv::namedWindow(window_title, CV_WINDOW_AUTOSIZE);
-    //cv::imshow(window_title, image);
+    detectAndDisplay(image, background);
 
     cv::waitKey(0);
 
     return 0;
 }
-
-/** @function detectAndDisplay */
-void detectAndDisplay( cv::Mat frame )
-{
-  std::vector<cv::Rect> faces;
-  cv::Mat frame_gray;
-
-  cv::cvtColor( frame, frame_gray, CV_BGR2GRAY );
-  cv::equalizeHist( frame_gray, frame_gray );
-
-  //-- Detect faces
-  face_cascade.detectMultiScale( frame_gray, faces, 1.1, 2, 0|CV_HAAR_SCALE_IMAGE, cv::Size(30, 30) );
-
-  for( int i = 0; i < faces.size(); i++ )
-  {
-    cv::Point center( faces[i].x + faces[i].width*0.5, faces[i].y + faces[i].height*0.5 );
-    cv::ellipse( frame, center, cv::Size( faces[i].width*0.5, faces[i].height*0.5), 0, 0, 360, cv::Scalar( 255, 0, 255 ), 4, 8, 0 );
-
-    cv::Mat faceROI = frame_gray( faces[i] );
-    std::vector<cv::Rect> eyes;
-
-    //-- In each face, detect eyes
-    eyes_cascade.detectMultiScale( faceROI, eyes, 1.1, 2, 0 |CV_HAAR_SCALE_IMAGE, cv::Size(30, 30) );
-
-    for( int j = 0; j < eyes.size(); j++ )
-     {
-       cv::Point center( faces[i].x + eyes[j].x + eyes[j].width*0.5, faces[i].y + eyes[j].y + eyes[j].height*0.5 );
-       int radius = cvRound( (eyes[j].width + eyes[j].height)*0.25 );
-       cv::circle( frame, center, radius, cv::Scalar( 255, 0, 0 ), 4, 8, 0 );
-     }
-  }
-  //-- Show what you got
-  cv::imshow( window_name, frame );
- }
