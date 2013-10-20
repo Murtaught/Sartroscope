@@ -8,6 +8,7 @@
 using namespace std;
 
 string window_title = "Sartroscope show image";
+string output_filename;
 
 // From http://www-personal.umich.edu/~shameem/haarcascade_eye.html
 string eyes_cascade_name = "haarcascade_eye.xml";
@@ -55,16 +56,31 @@ void detectAndDisplay(cv::Mat frame, cv::Mat background)
     cv::Mat smoothed_ngrframe;
     cv::GaussianBlur(noised_grframe, smoothed_ngrframe, cv::Size(3, 3), 0, 0);
 
-    cv::imshow(window_title, smoothed_ngrframe);
+    if ( output_filename == "" )
+    {
+        cv::imshow(window_title, smoothed_ngrframe);
+        cv::waitKey(0);
+    }
+    else
+    {
+        // write result to file
+        cout << "Writing to \"" << output_filename << "\"... ";
+
+        cv::imwrite(output_filename, smoothed_ngrframe);
+        cout << "OK!" << endl;
+    }
 }
 
 int main(int argc, char** argv)
 {
-    if ( argc < 3 )
+    if ( argc > 4 )
     {
-        cout << "Usage: " << argv[0] << " IMAGE_FILE BACKGROUND_FILE" << endl;
+        cout << "Usage: " << argv[0] << " IMAGE_FILE BACKGROUND_FILE [OUTPUT_FILE]" << endl;
         return -1;
     }
+
+    if ( argc == 4 )
+        output_filename = argv[3];
 
     cv::Mat image      = cv::imread(argv[1]);
     cv::Mat background = cv::imread(argv[2]);
@@ -83,8 +99,5 @@ int main(int argc, char** argv)
     }
 
     detectAndDisplay(image, background);
-
-    cv::waitKey(0);
-
     return 0;
 }
