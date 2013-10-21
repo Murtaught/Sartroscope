@@ -70,6 +70,7 @@ int main(int argc, char** argv)
     if ( argc > 4 || argc < 3 )
     {
         cout << "Usage: " << argv[0] << " IMAGE_FILE BACKGROUND_FILE [OUTPUT_FILE]" << endl;
+        cout << "       " << argv[0] << " capture BACKGROUND_FILE" << endl;
         return -1;
     }
 
