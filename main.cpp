@@ -124,6 +124,8 @@ int main(int argc, char** argv)
 
                 if ( !frame.empty() )
                 {
+                    // Remove color and process
+                    cv::cvtColor(frame, frame, CV_BGR2GRAY);
                     process(frame, background);
                 }
                 else
