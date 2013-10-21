@@ -98,6 +98,9 @@ int main(int argc, char** argv)
 
     if ( string(argv[1]) != "capture" )
     {
+        // Disable output file mode if it is enabled
+        output_filename = "";
+
         // Load image file
         cv::Mat image = cv::imread(argv[1]);
         if( !image.data )
