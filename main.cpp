@@ -59,7 +59,6 @@ void detectAndDisplay(cv::Mat frame, cv::Mat background)
     if ( output_filename == "" )
     {
         cv::imshow(window_title, smoothed_ngrframe);
-        cv::waitKey(0);
     }
     else
     {
@@ -82,15 +81,6 @@ int main(int argc, char** argv)
     if ( argc == 4 )
         output_filename = argv[3];
 
-    cv::Mat image      = cv::imread(argv[1]);
-    cv::Mat background = cv::imread(argv[2]);
-
-    if( !image.data || !background.data )
-    {
-        cout << "No image or background data" << endl;
-        return -2;
-    }
-
     // Load Haar cascades
     if ( !eyes_cascade.load(eyes_cascade_name) )
     {
@@ -98,6 +88,67 @@ int main(int argc, char** argv)
         return -3;
     }
 
-    detectAndDisplay(image, background);
+    // Load background file
+    cv::Mat background = cv::imread(argv[2]);
+    if ( !background.data )
+    {
+        cout << "No background data" << endl;
+        return -2;
+    }
+
+    if ( string(argv[1]) != "capture" )
+    {
+        // Load image file
+        cv::Mat image = cv::imread(argv[1]);
+        if( !image.data )
+        {
+            cout << "No image data" << endl;
+            return -2;
+        }
+
+        detectAndDisplay(image, background);
+
+        // If we show result in a window wait for a keypress
+        // else exit immediately
+        if ( output_filename.empty() )
+            cv::waitKey(0);
+    }
+    else
+    {
+        // Capture video stream from webcam
+        cv:CvCapture *capture;
+        cv::Mat frame;
+
+        capture = cvCaptureFromCAM( -1 ); // trying to capture webcam
+        if ( capture )
+        {
+            while (true)
+            {
+                frame = cvQueryFrame(capture);
+
+                if ( !frame.empty() )
+                {
+                    detectAndDisplay(frame, background);
+                }
+                else
+                {
+                    cout << "Captured empty frame, exiting" << endl;
+                    break;
+                }
+
+                int c = cv::waitKey( 10 );
+                if ( char(c) == 'c' )
+                {
+                    cout << "User pressed 'c', exiting" << endl;
+                    break;
+                }
+            }
+        }
+        else
+        {
+            cout << "Failed to capture webcam" << endl;
+            return -4;
+        }
+    }
     return 0;
 }
