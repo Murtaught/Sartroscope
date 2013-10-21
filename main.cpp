@@ -7,6 +7,8 @@
 #include <vector>
 using namespace std;
 
+#define SHOW_ORIGINAL_FRAME
+
 string window_title = "Sartroscope show image";
 string output_filename;
 
@@ -91,9 +93,6 @@ int main(int argc, char** argv)
 
     if ( string(argv[1]) != "capture" )
     {
-        // Disable output file mode if it is enabled
-        output_filename = "";
-
         // Load image file
         cv::Mat image = cv::imread(argv[1], CV_LOAD_IMAGE_GRAYSCALE);
         if( !image.data )
@@ -111,6 +110,9 @@ int main(int argc, char** argv)
     }
     else
     {
+        // Disable output file mode if it is enabled
+        output_filename = "";
+
         // Capture video stream from webcam
         cv:CvCapture *capture;
         cv::Mat frame;
@@ -124,6 +126,11 @@ int main(int argc, char** argv)
 
                 if ( !frame.empty() )
                 {
+                    #ifdef SHOW_ORIGINAL_FRAME
+                    // Show original frame in separate window
+                    cv::imshow("Original frame from webcam", frame);
+                    #endif
+
                     // Remove color and process
                     cv::cvtColor(frame, frame, CV_BGR2GRAY);
                     process(frame, background);
